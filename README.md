@@ -39,6 +39,11 @@ El APK se firma con la clave guardada en los secretos del repositorio
 | `KEY_ALIAS` | `fsmovil` |
 | `KEY_PASSWORD` | contraseña de la clave |
 
+### Notificaciones push
+Secreto `GOOGLE_SERVICES_JSON` con el contenido de `google-services.json` del proyecto Firebase
+(app Android `com.fsmovil.fsmovil`). Sin él la app se compila igual, pero sin notificaciones.
+Los envíos los hace el servicio `fsmovil-push` (plugin AppMovil), que guarda la cuenta de servicio.
+
 **Guarda una copia del `.jks` y su contraseña fuera de GitHub.** Si se pierde, las nuevas versiones
 no podrán instalarse encima de la anterior: habría que desinstalar la app en cada móvil.
 
