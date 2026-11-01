@@ -29,10 +29,29 @@ jobs:
       - name: Versión de Flutter
         run: flutter --version
 
-      - name: Generar y configurar la parte Android
+      - name: Generar la parte Android
+        run: flutter create --platforms=android --org com.fsmovil --project-name fsmovil .
+
+      - name: Firebase (notificaciones push)
+        env:
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
         run: |
-          flutter create --platforms=android --org com.fsmovil --project-name fsmovil .
-          python3 tool/configurar_android.py
+          if [ -z "$GOOGLE_SERVICES_JSON" ]; then
+            echo "::warning::Sin el secreto GOOGLE_SERVICES_JSON: la app se compila sin notificaciones push"
+            exit 0
+          fi
+          printf '%s' "$GOOGLE_SERVICES_JSON" > android/app/google-services.json
+          python3 - <<'PY'
+          import json, sys
+          d = json.load(open('android/app/google-services.json'))
+          paquetes = [c['client_info']['android_client_info']['package_name'] for c in d.get('client', [])]
+          print('Proyecto Firebase:', d['project_info']['project_id'], '· apps:', ', '.join(paquetes))
+          if 'com.fsmovil.fsmovil' not in paquetes:
+              sys.exit('::error::google-services.json no tiene la app com.fsmovil.fsmovil: en Firebase hay que añadir una app Android con ese nombre de paquete')
+          PY
+
+      - name: Configurar la parte Android
+        run: python3 tool/configurar_android.py
 
       - name: Clave de firma
         env:

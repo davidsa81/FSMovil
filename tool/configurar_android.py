@@ -152,6 +152,58 @@ def gradle():
         sys.exit('No se encuentra android/app/build.gradle(.kts)')
 
 
+GOOGLE_SERVICES_VERSION = '4.4.2'
+
+
+def firebase():
+    """Si hay google-services.json (lo pone el workflow desde un secreto), activa el plugin de Google Services."""
+    if not os.path.exists(os.path.join(ANDROID, 'app', 'google-services.json')):
+        print('Sin google-services.json: la app se compila sin notificaciones push')
+        return
+
+    ajustes_kts = os.path.join(ANDROID, 'settings.gradle.kts')
+    ajustes_groovy = os.path.join(ANDROID, 'settings.gradle')
+    app_kts = os.path.join(ANDROID, 'app', 'build.gradle.kts')
+    app_groovy = os.path.join(ANDROID, 'app', 'build.gradle')
+
+    if os.path.exists(ajustes_kts):
+        a = leer(ajustes_kts)
+        if 'com.google.gms.google-services' not in a:
+            a, n = re.subn(
+                r'(\n(\s*)id\("com\.android\.application"\)[^\n]*)',
+                r'\1\n\2id("com.google.gms.google-services") version "%s" apply false' % GOOGLE_SERVICES_VERSION,
+                a, count=1)
+            if n == 0:
+                sys.exit('No se pudo añadir el plugin de Google Services a settings.gradle.kts')
+            escribir(ajustes_kts, a)
+    elif os.path.exists(ajustes_groovy):
+        a = leer(ajustes_groovy)
+        if 'com.google.gms.google-services' not in a:
+            a, n = re.subn(
+                r'(\n(\s*)id\s+"com\.android\.application"[^\n]*)',
+                r'\1\n\2id "com.google.gms.google-services" version "%s" apply false' % GOOGLE_SERVICES_VERSION,
+                a, count=1)
+            if n == 0:
+                sys.exit('No se pudo añadir el plugin de Google Services a settings.gradle')
+            escribir(ajustes_groovy, a)
+
+    if os.path.exists(app_kts):
+        g = leer(app_kts)
+        if 'com.google.gms.google-services' not in g:
+            g, n = re.subn(r'(plugins\s*\{[^}]*?)(\n\})', r'\1\n    id("com.google.gms.google-services")\2', g, count=1)
+            if n == 0:
+                sys.exit('No se pudo añadir el plugin de Google Services a app/build.gradle.kts')
+            escribir(app_kts, g)
+    elif os.path.exists(app_groovy):
+        g = leer(app_groovy)
+        if 'com.google.gms.google-services' not in g:
+            g, n = re.subn(r'(plugins\s*\{[^}]*?)(\n\})', r'\1\n    id "com.google.gms.google-services"\2', g, count=1)
+            if n == 0:
+                sys.exit('No se pudo añadir el plugin de Google Services a app/build.gradle')
+            escribir(app_groovy, g)
+    print('Firebase activado (plugin de Google Services)')
+
+
 def iconos():
     origen = os.path.join(RAIZ, 'tool', 'iconos')
     res = os.path.join(ANDROID, 'app', 'src', 'main', 'res')
@@ -167,4 +219,5 @@ if __name__ == '__main__':
         sys.exit('Falta la carpeta android/: ejecuta antes flutter create')
     manifiesto()
     gradle()
+    firebase()
     iconos()

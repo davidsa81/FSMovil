@@ -8,6 +8,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import '../api/api.dart';
 import 'archivos.dart';
 import 'cola.dart';
+import 'push.dart';
 import 'sesion.dart';
 
 /// Estado global de la app: enlace con el servidor, datos de inicio y caché.
@@ -74,6 +75,8 @@ class Estado extends ChangeNotifier {
     inicio = null;
     notifyListeners();
     await cargarInicio();
+    // ya enlazado: pedimos permiso de notificaciones y registramos el móvil
+    unawaited(Push.instancia.registrar());
   }
 
   Future<void> cargarInicio() async {

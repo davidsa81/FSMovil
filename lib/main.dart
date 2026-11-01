@@ -1,15 +1,20 @@
 import 'package:flutter/material.dart';
 
 import 'datos/estado.dart';
+import 'datos/push.dart';
+import 'pantallas/avisos.dart';
 import 'pantallas/enlazar.dart';
 import 'pantallas/inicio.dart';
+import 'pantallas/partes/detalle_parte.dart';
 import 'widgets/comunes.dart';
 
 final navegador = GlobalKey<NavigatorState>();
+final mensajero = GlobalKey<ScaffoldMessengerState>();
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Estado.instancia.arrancar();
+  await Push.instancia.arrancar();
   runApp(const FSMovil());
 }
 
@@ -30,6 +35,33 @@ class _FSMovilState extends State<FSMovil> {
         (_) => false,
       );
     };
+
+    final push = Push.instancia;
+    push.alAbrir = _abrirDesdeAviso;
+    push.alRecibir = (titulo, mensaje, datos) {
+      // con la app abierta Android no muestra la notificación: la enseñamos nosotros
+      Estado.instancia.cargarInicio();
+      mensajero.currentState?.showSnackBar(SnackBar(
+        content: Text(mensaje.isEmpty ? titulo : '$titulo\n$mensaje', style: const TextStyle(fontSize: 19)),
+        backgroundColor: Colores.naranja,
+        duration: const Duration(seconds: 8),
+        behavior: SnackBarBehavior.floating,
+        action: SnackBarAction(label: 'VER', textColor: Colors.white, onPressed: () => _abrirDesdeAviso(datos)),
+      ));
+    };
+    push.registrar();
+  }
+
+  /// Abre la pantalla que corresponde al aviso (el parte, o la lista de avisos).
+  void _abrirDesdeAviso(Map<String, dynamic> datos) {
+    final nav = navegador.currentState;
+    if (nav == null || Estado.instancia.sesion == null) return;
+    final id = int.tryParse('${datos['id'] ?? ''}');
+    if (datos['modulo'] == 'partes' && id != null) {
+      nav.push(MaterialPageRoute(builder: (_) => PantallaDetalleParte(id: id)));
+    } else {
+      nav.push(MaterialPageRoute(builder: (_) => const PantallaAvisos()));
+    }
   }
 
   @override
@@ -41,6 +73,7 @@ class _FSMovilState extends State<FSMovil> {
     return MaterialApp(
       title: 'FSMovil',
       navigatorKey: navegador,
+      scaffoldMessengerKey: mensajero,
       debugShowCheckedModeBanner: false,
       theme: base.copyWith(
         scaffoldBackgroundColor: Colores.fondo,
