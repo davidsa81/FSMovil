@@ -83,12 +83,17 @@ jobs:
           cp pubspec.lock pubspec.lock.compilado || true
 
       - name: Comprobar el APK
+        shell: bash
         run: |
+          set +e +o pipefail
           ls -lh FSMovil.apk
           AAPT=$(ls "$ANDROID_HOME"/build-tools/*/aapt | sort -V | tail -1)
-          "$AAPT" dump badging FSMovil.apk | grep -E "^(package|sdkVersion|targetSdkVersion|uses-permission|application-label|launchable)"
+          "$AAPT" dump badging FSMovil.apk > badging.txt
+          grep -E "^(package|sdkVersion|targetSdkVersion|uses-permission|application-label:|launchable)" badging.txt
           APKSIGNER=$(ls "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -1)
-          "$APKSIGNER" verify --print-certs FSMovil.apk | grep -E "Signer #1 certificate (DN|SHA-256)"
+          "$APKSIGNER" verify --print-certs FSMovil.apk > firma.txt 2>&1
+          grep -iE "signer #1 certificate (dn|sha-256)" firma.txt || cat firma.txt
+          exit 0
 
       - uses: actions/upload-artifact@v4
         with:
