@@ -39,6 +39,10 @@ class Push {
       alRecibir?.call(m.notification?.title ?? 'Aviso', m.notification?.body ?? '', Map<String, dynamic>.from(m.data));
     });
     FirebaseMessaging.onMessageOpenedApp.listen((m) => alAbrir?.call(Map<String, dynamic>.from(m.data)));
+    // Usamos el token de registro clásico (el que acepta la API HTTP v1 de FCM en "token", que es lo que
+    // usa el servicio fsmovil-push). La API nueva register()/onRegistered da un ID de instalación (FID)
+    // para otro modo de envío, así que de momento seguimos con getToken()/onTokenRefresh.
+    // ignore: deprecated_member_use
     fm.onTokenRefresh.listen((t) => _enviarToken(t, forzar: true));
 
     // la app se abrió pulsando una notificación
@@ -56,6 +60,7 @@ class Push {
     if (!disponible || Estado.instancia.sesion == null) return;
     try {
       await FirebaseMessaging.instance.requestPermission(alert: true, badge: true, sound: true);
+      // ignore: deprecated_member_use
       final token = await FirebaseMessaging.instance.getToken();
       if (token != null) await _enviarToken(token);
     } catch (e) {
