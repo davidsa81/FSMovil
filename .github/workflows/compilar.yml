@@ -104,7 +104,8 @@ jobs:
           grep -E "^(package|sdkVersion|targetSdkVersion|uses-permission|application-label:|launchable)" badging.txt
           APKSIGNER=$(ls "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -1)
           "$APKSIGNER" verify --print-certs FSMovil.apk > firma.txt 2>&1
-          grep -iE "signer #1 certificate (dn|sha-256)" firma.txt || cat firma.txt
+          echo "--- firma del APK ---"
+          sed -n '1,12p' firma.txt
           exit 0
 
       - uses: actions/upload-artifact@v5
