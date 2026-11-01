@@ -1,0 +1,20 @@
+# Flutter / Dart
+.dart_tool/
+.packages
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+*.iml
+.idea/
+# La carpeta android/ se genera en cada compilación (tool/configurar_android.py)
+android/
+ios/
+linux/
+macos/
+windows/
+web/
+# Claves: nunca al repositorio
+*.jks
+*.keystore
+key.properties
+google-services.json
