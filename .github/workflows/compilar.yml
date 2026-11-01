@@ -38,16 +38,26 @@ jobs:
 
       - name: Clave de firma
         env:
-          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
-          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 || vars.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD || vars.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS || vars.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD || vars.KEY_PASSWORD }}
         run: |
-          if [ -z "$KEYSTORE_BASE64" ]; then
-            echo "::warning::Sin clave de firma en los secretos: el APK se firma con la clave de depuración"
+          # qué datos de firma llegan (nunca se muestra su valor)
+          for v in KEYSTORE_BASE64 KEYSTORE_PASSWORD KEY_ALIAS KEY_PASSWORD; do
+            valor="${!v}"
+            if [ -n "$valor" ]; then echo "$v: presente (${#valor} caracteres)"; else echo "$v: FALTA"; fi
+          done
+          if [ -z "$KEYSTORE_BASE64" ] || [ -z "$KEYSTORE_PASSWORD" ] || [ -z "$KEY_ALIAS" ] || [ -z "$KEY_PASSWORD" ]; then
+            echo "::warning::Faltan datos de firma: el APK se firma con la clave de depuración"
             exit 0
           fi
-          echo "$KEYSTORE_BASE64" | base64 -d > android/app/fsmovil.jks
+          echo "$KEYSTORE_BASE64" | tr -d ' \r\n' | base64 -d > android/app/fsmovil.jks
+          if ! keytool -list -keystore android/app/fsmovil.jks -storepass "$KEYSTORE_PASSWORD" -alias "$KEY_ALIAS" > /dev/null 2>&1; then
+            echo "::error::La clave de firma no se puede abrir: revisa KEYSTORE_BASE64, KEYSTORE_PASSWORD y KEY_ALIAS"
+            exit 1
+          fi
+          echo "Clave de firma correcta"
           {
             echo "storeFile=fsmovil.jks"
             echo "storePassword=$KEYSTORE_PASSWORD"
